@@ -1,0 +1,89 @@
+#include <GL/glut.h>
+
+#define LEFT 1
+#define RIGHT 2
+#define BOTTOM 4
+#define TOP 8
+
+float xmin = 100, ymin = 100, xmax = 300, ymax = 300;
+
+// Simple region code checker
+int getCode(float x, float y) {
+    int code = 0;
+    if (x < xmin) code |= LEFT;
+    if (x > xmax) code |= RIGHT;
+    if (y < ymin) code |= BOTTOM;
+    if (y > ymax) code |= TOP;
+    return code;
+}
+
+// Cohen-Sutherland Line Clipping
+bool clip(float &x1, float &y1, float &x2, float &y2) {
+    int c1 = getCode(x1, y1), c2 = getCode(x2, y2);
+    while (true) {
+        if ((c1 | c2) == 0) return true;
+        if (c1 & c2) return false;
+
+        float x, y;
+        int out = c1 ? c1 : c2;
+
+        if (out & TOP) {
+            x = x1 + (x2 - x1) * (ymax - y1) / (y2 - y1); y = ymax;
+        } else if (out & BOTTOM) {
+            x = x1 + (x2 - x1) * (ymin - y1) / (y2 - y1); y = ymin;
+        } else if (out & RIGHT) {
+            y = y1 + (y2 - y1) * (xmax - x1) / (x2 - x1); x = xmax;
+        } else {
+            y = y1 + (y2 - y1) * (xmin - x1) / (x2 - x1); x = xmin;
+        }
+
+        if (out == c1) { x1 = x; y1 = y; c1 = getCode(x1, y1); }
+        else { x2 = x; y2 = y; c2 = getCode(x2, y2); }
+    }
+}
+
+// Draw line
+void draw(float x1, float y1, float x2, float y2) {
+    glBegin(GL_LINES);
+    glVertex2f(x1, y1); glVertex2f(x2, y2);
+    glEnd();
+}
+
+void display() {
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    // Draw clip window
+    glColor3f(0, 0, 1); // blue
+    draw(xmin, ymin, xmax, ymin);
+    draw(xmax, ymin, xmax, ymax);
+    draw(xmax, ymax, xmin, ymax);
+    draw(xmin, ymax, xmin, ymin);
+
+    // Polygon lines
+    float poly[5][2] = {{50,150},{200,350},{350,250},{250,100},{50,150}};
+
+    glColor3f(1, 0, 0); // red clipped polygon
+    for (int i = 0; i < 4; i++) {
+        float x1 = poly[i][0], y1 = poly[i][1];
+        float x2 = poly[i+1][0], y2 = poly[i+1][1];
+        if (clip(x1, y1, x2, y2)) draw(x1, y1, x2, y2);
+    }
+
+    glFlush();
+}
+
+void init() {
+    glClearColor(1, 1, 1, 1); // white background
+    gluOrtho2D(0, 500, 0, 500);
+}
+
+int main(int argc, char** argv) {
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
+    glutInitWindowSize(500, 500);
+    glutCreateWindow("Simple Cohen-Sutherland Clipping");
+    init();
+    glutDisplayFunc(display);
+    glutMainLoop();
+    return 0;
+}
