@@ -1,0 +1,48 @@
+#include <GL/glut.h>
+
+// Triangle position
+float xPos = 0.0;
+
+// Draw a simple triangle
+void drawTriangle() {
+    glClear(GL_COLOR_BUFFER_BIT);
+    glLoadIdentity();
+
+    glTranslatef(xPos, 0.0, 0.0); // Move triangle along X-axis
+
+    glColor3f(1.0, 0.0, 0.0);     // Red triangle
+    glBegin(GL_TRIANGLES);
+        glVertex2f(-0.1f, -0.1f);
+        glVertex2f(0.1f, -0.1f);
+        glVertex2f(0.0f,  0.1f);
+    glEnd();
+
+    glFlush();
+}
+
+// Update position for animation
+void update(int value) {
+    xPos += 0.01f;           // Move right
+    if (xPos > 1.0f) xPos = -1.0f; // Reset to left when off screen
+
+    glutPostRedisplay();     // Redraw
+    glutTimerFunc(16, update, 0);  // Call update again after 16 ms (~60 FPS)
+}
+
+// Initialization
+void init() {
+    glClearColor(1, 1, 1, 1);   // White background
+}
+
+// Main function
+int main(int argc, char** argv) {
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
+    glutInitWindowSize(600, 600);
+    glutCreateWindow("Simple Triangle Animation");
+    init();
+    glutDisplayFunc(drawTriangle);
+    glutTimerFunc(0, update, 0);  // Start animation
+    glutMainLoop();
+    return 0;
+}
